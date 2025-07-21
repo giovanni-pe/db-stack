@@ -1,0 +1,67 @@
+version: '3.8'
+
+services:
+  mssql:
+    image: mcr.microsoft.com/mssql/server:2019-latest
+    container_name: mssql-server
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=development20
+    ports:
+      - "1433:1433"
+    volumes:
+      - ./scripts:/scripts:ro
+    entrypoint: >
+      bash -c "
+        # Arranca SQL Server en background
+        /opt/mssql/bin/sqlservr & pid=\$!; \
+        # Espera a que acepte conexiones
+        echo 'Waiting for SQL Server to start…'; \
+        until /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P development20 -Q 'SELECT 1' &>/dev/null; do \
+          sleep 2; \
+        done; \
+        # Ejecuta el script de init
+        echo 'Running initialization script…'; \
+        /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P development20 -i /scripts/create-sqlserver-user.sql; \
+        # Mantiene el proceso en foreground
+        wait \$pid
+      "
+
+  adminer:
+    build:
+      context: ./adminer
+    container_name: adminer
+    environment:
+      - TDSVER=7.4
+    depends_on:
+      - mssql
+    ports:
+      - "8081:8080"
+
+  mysql:
+    image: mysql:8.0
+    container_name: mysql-server
+    environment:
+      - MYSQL_ROOT_PASSWORD=development20
+      - MYSQL_DATABASE=dev20db
+      - MYSQL_USER=dev20
+      - MYSQL_PASSWORD=development20
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: phpmyadmin
+    depends_on:
+      - mysql
+    environment:
+      - PMA_HOST=mysql
+      - PMA_USER=dev20
+      - PMA_PASSWORD=development20
+    ports:
+      - "8080:80"
+
+volumes:
+  mysql-data:

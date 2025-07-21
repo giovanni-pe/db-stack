@@ -1,0 +1,6 @@
+CREATE LOGIN [dev20] WITH PASSWORD = 'development20';
+GO
+CREATE USER [dev20] FOR LOGIN [dev20];
+GO
+ALTER SERVER ROLE [sysadmin] ADD MEMBER [dev20];
+GO
