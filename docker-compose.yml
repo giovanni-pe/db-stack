@@ -1,21 +1,20 @@
-version: '3.8'
-
 services:
   mssql-server:
     image: mcr.microsoft.com/mssql/server:2019-latest
     container_name: mssql-server
     environment:
-      SA_PASSWORD: "Dev20Pass!"   # contraseña con política cumplida
+      SA_PASSWORD: "Dev20Pass!"
       ACCEPT_EULA: "Y"
     ports:
       - "1433:1433"
     volumes:
       - mssql_data:/var/opt/mssql
     healthcheck:
-      test: /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P "$$SA_PASSWORD" -Q "SELECT 1"
-      interval: 10s
-      retries: 5
-      start_period: 30s
+      test: ["CMD-SHELL", "/opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P \"$SA_PASSWORD\" -Q \"SELECT 1\""]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
 
   adminer:
     image: adminer:latest
